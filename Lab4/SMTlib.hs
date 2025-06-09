@@ -38,7 +38,7 @@ type Model = [(String, String)]
 -- Ubicación donde se encuentra el SMT-solver a utilizar
 -- En caso de haberla agregado al PATH, dejar lo siguiente sin cambiar.
 -- De lo contrario, modificar lo siguiente con dicha ubicación.
-solverPath = "C:\\cvc5-Win64-x86_64-static\\bin"
+solverPath = "C:\\cvc5-Win64-x86_64-static\\bin\\cvc5.exe"
 --solverPath = ".\\"
 --solverPath = "C:\\Windows\\System32\\notepad.exe"
 
