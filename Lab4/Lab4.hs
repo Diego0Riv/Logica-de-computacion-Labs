@@ -47,8 +47,15 @@ satProblemCaso1 = ("QF_LIA", vocEj1, map lp2SMT caso1)
 -- Formalización del caso 2.
 -- Respuesta: ... COMPLETAR CON RESPUESTA ...
 caso2 :: [L]
-caso2 = undefined
+caso2 = [Bin a Iff diceA, Bin b Iff diceB1, Bin b Iff diceB2, Bin c Iff diceC]
+  where
+    diceA = Bin (Bin (b) And (Neg c)) Or (Bin (Neg b) And (c))
+    diceB1 = Bin (Neg a) And (Neg b)
+    diceB2 = Neg c
+    diceC = a
 
+satProblemCaso2 :: SATproblem
+satProblemCaso2 = ("QF_LIA", vocEj1, map lp2SMT caso2)
 
 ----------------------------------------------------------------------------------
 -- 2. Binairo y Tango
@@ -60,19 +67,108 @@ type Binairo = (Nat,           -- (n)  Tamaño del tablero, tal que n >= 4 y n p
                 [(Nat,Nat)])   -- (ls) Celdas con luna 
 
 binairo :: Binairo -> [L]
-binairo b = [initialState b]
+binairo b = [initialState b,
+             condJustOne b,
+             condA b,
+             condB b]
+
+condJustOne :: Binairo -> L
+condJustOne (n, _, _) =
+  bigAnd [1..n] (\i ->
+    bigAnd [1..n] (\j ->
+        Neg (Bin (v2 "s" i j) Iff (luna2LP (i, j)))
+      )
+    )
+
+condA :: Binairo -> L
+condA b = condAFilas b `myAnd` condACols b
+
+condAFilas :: Binairo -> L
+condAFilas (n, _, _) =
+  bigAnd [1..n] (\i ->
+      (exactK (n `div` 2) [1..n] (\j ->
+          v2 "s" i j
+        )) 
+      `myAnd` 
+      (exactK (n `div` 2) [1..n] (\j ->
+          v2 "l" i j
+        ))
+    )
+
+condACols :: Binairo -> L
+condACols (n, _, _) =
+  bigAnd [1..n] (\j ->
+      (exactK (n `div` 2) [1..n] (\i ->
+          v2 "s" i j
+        )) 
+      `myAnd` 
+      (exactK (n `div` 2) [1..n] (\i ->
+          v2 "l" i j
+        ))
+    )
+
+condB :: Binairo -> L
+condB b = condBFilas b `myAnd` condBCols b
+
+condBFilas :: Binairo -> L
+condBFilas (n, _, _) =
+  bigAnd [1..n] (\i ->
+      (Neg (existSeq3 [1..n] (\j ->
+          v2 "s" i j
+        ))) 
+      `myAnd` 
+      (Neg (existSeq3 [1..n] (\j ->
+          v2 "l" i j
+        )))
+    )
+
+condBCols :: Binairo -> L
+condBCols (n, _, _) =
+  bigAnd [1..n] (\j ->
+      (Neg (existSeq3 [1..n] (\i ->
+          v2 "s" i j
+        ))) 
+      `myAnd` 
+      (Neg (existSeq3 [1..n] (\i ->
+          v2 "l" i j
+        )))
+    )
+
+existSeq3 :: [Nat] -> (Nat -> L) -> L
+existSeq3 is f =
+  bigOr is (\n ->
+      (f n) `myAnd` (bigOr (nextTo n) (\n' ->
+          (f n') `myAnd` (bigOr (nextTo n') (\n'' ->
+              f n''
+            ))
+        ))
+    )
+  where
+    nextTo y = [ x | x <- is, x == y + 1]
+
+
+exactK :: Nat -> [Nat] -> (Nat -> L) -> L
+exactK 1 is f =
+  bigOr is (\i ->
+    (f i) `myAnd` (Neg (
+      bigOr (is\\[i]) (\i' ->
+          f i'
+        )
+    ))
+    )  
+
+exactK k is f =
+  bigOr is (\i ->
+    (f i) `myAnd` (exactK (k-1) (is\\[i]) f)
+    )
 
 initialState :: Binairo -> L
-initialState (n, soles, lunas) = Bin (conj $ map sol2LP soles) And (conj $ map luna2LP lunas)
+initialState (n, soles, lunas) = Bin (conj $ map sol2LP soles) 
+                                 And (conj $ map luna2LP lunas)
 
 conj :: [L] -> L
 conj [] = top
 conj (f:fs) = f `myAnd` (conj fs)
-
-condJustOne :: Binairo -> L
-condJustOne (n, soles, lunas) =
-  undefined
-
 
 sol2LP :: (Nat, Nat) -> L
 sol2LP (i, j) = v2 "s" i j
@@ -80,26 +176,14 @@ sol2LP (i, j) = v2 "s" i j
 luna2LP :: (Nat, Nat) -> L
 luna2LP (i, j) = v2 "l" i j
 
-
-exactK :: Nat -> [Nat] -> (Nat -> L) -> L
-exactK l is f =
-  bigOr is (\i ->
-    (f i) `myAnd` (Neg (
-      bigOr (is\\[i]) (\i' ->
-        f i'
-      )
-    )
-
-  )
-  )
 vocBinairo :: Binairo -> [SymDecl]
-vocBinairo (n, _ , _) = genVars2 "Bool" "s" [1..n][1..n]
-                     ++ genVars2 "Bool" "s" [1..n][1..n]
-                     ++ [pVarDec] 
+vocBinairo (n, _, _) = genVars2 "Bool" "s" [1..n] [1..n]
+                    ++ genVars2 "Bool" "l" [1..n] [1..n]
+                    ++ [pVarDec]
 
 -- Resolución del puzzle
 solveBinairo :: Binairo -> IO (Maybe Model)
-solveBinairo = undefined
+solveBinairo b = solve ("QF_LIA", vocBinairo b, map lp2SMT (binairo b))
 
 -- 2.2 Resolver Binairo básico b_n8
 b_n8 :: Binairo  
