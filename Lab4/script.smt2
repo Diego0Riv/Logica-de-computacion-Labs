@@ -1,0 +1,8 @@
+(set-logic QF_LIA)
+(declare-fun a () Bool)
+(declare-fun b () Bool)
+(declare-fun c () Bool)
+(assert (= a (and (not a) (and (not b) (not c)))))
+(assert (= b (or (and (and a (not b)) (not c)) (or (and (and (not a) b) (not c)) (and (and (not a) (not b)) c)))))
+(check-sat)
+(exit)
