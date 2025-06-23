@@ -47,7 +47,7 @@ satProblemCaso1 = ("QF_LIA", vocEj1, map lp2SMT caso1)
 -- Formalización del caso 2.
 -- Respuesta: ... COMPLETAR CON RESPUESTA ...
 caso2 :: [L]
-caso2 = [Bin a Iff diceA, Bin b Iff diceB1, Bin b Iff diceB2, Bin c Iff diceC]
+caso2 = [Bin a Iff diceA, Bin b Iff (Bin (diceB1) And (diceB2)), Bin c Iff diceC]
   where
     diceA = Bin (Bin (b) And (Neg c)) Or (Bin (Neg b) And (c))
     diceB1 = Bin (Neg a) And (Neg b)
@@ -179,6 +179,7 @@ luna2LP (i, j) = v2 "l" i j
 vocBinairo :: Binairo -> [SymDecl]
 vocBinairo (n, _, _) = genVars2 "Bool" "s" [1..n] [1..n]
                     ++ genVars2 "Bool" "l" [1..n] [1..n]
+                    ++ genVars2 "Bool" "f" [0..n] [0..n]
                     ++ [pVarDec]
 
 -- Resolución del puzzle
@@ -192,11 +193,47 @@ b_n8 = (8, [(1,6),(1,8),(3,8),(4,6),(5,1),(5,2),(5,6),(6,1),(8,7)],
 
 -- 2.3 Formalización de Binairo estándar
 binairoStd :: Binairo -> [L]
-binairoStd = undefined                   
+binairoStd b = [initialState b,
+                condJustOne b,
+                condA b,
+                condB b,
+                condC b]     
+
+
+condC :: Binairo -> L
+condC b = condCFilas b `myAnd` condCColumnas b
+
+condCFilas :: Binairo -> L
+condCFilas (n, _, _) =
+  bigAnd [0..n-2] (\i ->
+    bigAnd [i+1..n-1] (\j ->
+      bigOr [0..n-1] (\k ->
+        Neg (Bin (v2 "f" i k) Iff (v2 "f" j k))
+      )
+    )
+  )
+
+condCColumnas :: Binairo -> L
+condCColumnas (n, _, _) =
+  bigAnd [0..n-2] (\i ->
+    bigAnd [i+1..n-1] (\j ->
+      bigOr [0..n-1] (\k ->
+        Neg (Bin (v2 "f" k i) Iff (v2 "f" k j))
+      )
+    )
+  )
 
 -- Resolución del puzzle
 solveBinairoStd :: Binairo -> IO (Maybe Model)
-solveBinairoStd = undefined
+solveBinairoStd b = do
+  result <- solve ("QF_LIA", vocBinairo b, map lp2SMT (binairoStd b))
+  case result of
+    Just model -> return $ Just (filter (not . isFVar . fst) model)
+    Nothing    -> return Nothing
+
+-- esto es para eliminar las variables f que quedaban en la salida del solve binairo, ya que no tenia idea de que otra forma hacerlo
+isFVar :: String -> Bool
+isFVar name = take 1 name == "f"
 
 -- 2.4 Resolver Binairo std b_n8 y comparar con soluciones del punto 2.2
 -- ... EXPLICAR AQUÍ ...
