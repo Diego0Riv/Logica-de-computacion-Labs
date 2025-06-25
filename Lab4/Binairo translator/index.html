@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Documento Base</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+     rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+    <style>
+    table {
+      border-collapse: collapse;
+    }
+    td {
+      width: 40px;
+      height: 40px;
+      text-align: center;
+      vertical-align: middle;
+      border: 1px solid #ccc;
+      font-weight: bold;
+      font-family: sans-serif;
+    }
+    .s {
+      background-color: yellow;
+      color: black;
+    }
+    .l {
+      background-color: lightblue;
+      color: black;
+    }
+  </style>
+
+    </head>
+<body>
+
+    <div class="container mt-5 justify-content-center d-flex item align-items-center">
+        <label for="inputText">Translate</label>
+        <input type="text" id="inputText">
+        <button class="btn btn-primary" onclick="crearTabla()">Mandele</button>
+    </div>
+    <div id="tabla-container" class="container mt-5 justify-content-center d-flex item align-items-center flex-column"></div>
+    <script 
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" 
+        integrity="sha384-qFtgkQXd6j+zLkGZQv1sPbX2ebslzvbPy6f3kzKlvTdzKnAMedWbRg0rH3S5Rf5A" 
+        crossorigin="anonymous"
+    ></script>
+    <script src="main.js"></script>
+</body>
+</html>

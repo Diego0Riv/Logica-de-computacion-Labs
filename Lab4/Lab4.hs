@@ -3,6 +3,8 @@ module Lab4 where
 ------------------- Estudiante/s -------------------
 -- Nombres y apellidos: Diego Rafael Rivero Moreira
 -- Números: 269299
+-- Hay una mini pagina en la carpeta Binairo translator que la utlice para pasar las salidas a una tabla, no se si funcionaria con binairos de menos de 8 x 8, casi seguro que no
+-- pero la dejo aca por si ayuda a visualizar los binairos
 ----------------------------------------------------
 
 import Prelude
@@ -184,7 +186,11 @@ vocBinairo (n, _, _) = genVars2 "Bool" "s" [1..n] [1..n]
 
 -- Resolución del puzzle
 solveBinairo :: Binairo -> IO (Maybe Model)
-solveBinairo b = solve ("QF_LIA", vocBinairo b, map lp2SMT (binairo b))
+solveBinairo b = do
+  result <- solve ("QF_LIA", vocBinairo b, map lp2SMT (binairo b))
+  case result of
+    Just model -> return $ Just (filter (not . isFVar . fst) model)
+    Nothing    -> return Nothing
 
 -- 2.2 Resolver Binairo básico b_n8
 b_n8 :: Binairo  
@@ -236,7 +242,9 @@ isFVar :: String -> Bool
 isFVar name = take 1 name == "f"
 
 -- 2.4 Resolver Binairo std b_n8 y comparar con soluciones del punto 2.2
--- ... EXPLICAR AQUÍ ...
+-- Hay cambios en la columna 3 y 4 ya que la columna 2 y 4 eran iguales como se ve en la imagen 2.4.png,
+-- por lo tanto se puede deducir que al menos con el ejemplo b_n8 el algoritmo std funciona
+
 
 -- 2.5 Formalización de Tango  
 data Cond  = Eq | Neq
@@ -246,11 +254,106 @@ type Tango = (Nat,                            -- (n)  Tamaño del tablero, tal q
               [((Nat,Nat),(Nat,Nat), Cond)])  -- (cs) Condiciones de adyacencia
 
 tango :: Tango -> [L]
-tango = undefined
+tango t = [ initialStateT t
+          , condJustOneT t
+          , condAT t
+          , condBT t
+          , condCT t
+          , condDT t
+          ]
 
--- Resolución del puzzle
+tangoToBinairo :: Tango -> Binairo
+tangoToBinairo (n, ss, ls, _) = (n, ss, ls)
+
+initialStateT :: Tango -> L
+initialStateT (n, soles, lunas, _) = Bin (conj $ map sol2LP soles) 
+                                     And (conj $ map luna2LP lunas)
+
+condJustOneT :: Tango -> L
+condJustOneT (n, _, _, _) =
+  bigAnd [1..n] (\i ->
+    bigAnd [1..n] (\j ->
+        Neg (Bin (v2 "s" i j) Iff (luna2LP (i, j)))
+      )
+    )
+
+condAT :: Tango -> L
+condAT t = condAFilasT t `myAnd` condAColsT t
+
+condAFilasT :: Tango -> L
+condAFilasT (n, _, _, _) =
+  bigAnd [1..n] (\i ->
+      exactK (n `div` 2) [1..n] (\j -> v2 "s" i j)
+      `myAnd`
+      exactK (n `div` 2) [1..n] (\j -> v2 "l" i j)
+    )
+
+condAColsT :: Tango -> L
+condAColsT (n, _, _, _) =
+  bigAnd [1..n] (\j ->
+      exactK (n `div` 2) [1..n] (\i -> v2 "s" i j)
+      `myAnd`
+      exactK (n `div` 2) [1..n] (\i -> v2 "l" i j)
+    )
+
+condBT :: Tango -> L
+condBT t = condBFilasT t `myAnd` condBColsT t
+
+condBFilasT :: Tango -> L
+condBFilasT (n, _, _, _) =
+  bigAnd [1..n] (\i ->
+      Neg (existSeq3 [1..n] (\j -> v2 "s" i j))
+      `myAnd`
+      Neg (existSeq3 [1..n] (\j -> v2 "l" i j))
+    )
+
+condBColsT :: Tango -> L
+condBColsT (n, _, _, _) =
+  bigAnd [1..n] (\j ->
+      Neg (existSeq3 [1..n] (\i -> v2 "s" i j))
+      `myAnd`
+      Neg (existSeq3 [1..n] (\i -> v2 "l" i j))
+    )
+
+condCT :: Tango -> L
+condCT t = condCFilasT t `myAnd` condCColsT t
+
+condCFilasT :: Tango -> L
+condCFilasT (n, _, _, _) =
+  bigAnd [0..n-2] (\i ->
+    bigAnd [i+1..n-1] (\j ->
+      bigOr [0..n-1] (\k ->
+        Neg (Bin (v2 "f" i k) Iff (v2 "f" j k))
+      )
+    )
+  )
+
+condCColsT :: Tango -> L
+condCColsT (n, _, _, _) =
+  bigAnd [0..n-2] (\i ->
+    bigAnd [i+1..n-1] (\j ->
+      bigOr [0..n-1] (\k ->
+        Neg (Bin (v2 "f" k i) Iff (v2 "f" k j))
+      )
+    )
+  )
+
+condDT :: Tango -> L
+condDT (_, _, _, cs) = bigAnd [0..length cs - 1] (\i -> restriccion (cs !! i))
+
+restriccion :: ((Nat, Nat), (Nat, Nat), Cond) -> L
+restriccion ((i1,j1),(i2,j2), Eq) =
+  Bin (v2 "s" i1 j1) Iff (v2 "s" i2 j2)
+
+restriccion ((i1,j1),(i2,j2), Neq) =
+  Bin (v2 "s" i1 j1) Iff (Neg (v2 "s" i2 j2))
+
 solveTango :: Tango -> IO (Maybe Model)
-solveTango = undefined
+solveTango t = do
+  result <- solve ("QF_LIA", vocBinairo (tangoToBinairo t), map lp2SMT (tango t))
+  case result of
+    Just model -> return $ Just (filter (not . isFVar . fst) model)
+    Nothing    -> return Nothing
 
 -- 2.6 Resolver Tango t_n8
 t_n8 :: Tango 
