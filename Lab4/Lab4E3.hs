@@ -25,7 +25,7 @@ type Nat = Int
 
 -- 3.2. ... COMPLETAR CON RESPUESTA ...
 -- Personalmente se me hace imposible no verlo desde un punto de vista matematico, y viendolo desde un punto de vista matematico puedo hacer limites, y hacer que c teinda a 1 o que tienda a infinito
--- En cuanto a Logica, 
+-- En cuanto a Logica, creo que algo tal que (Para todo x)(Existe un y)(P(x,y)) y no hay ninguna restriccion diciendo que y no puede ser igual a x, asi como x puede ser cualquier numero desde 1 al infinito
 
 
 -- 3.3. Formalización del Problema de la mochila 0-c
@@ -171,7 +171,7 @@ mb = (10, vs3_6, ws3_6, 15, 0)
 mc :: KSc
 mc = (10, vs3_6, ws3_6, 15, 2, 0)
 
--- Función para resolver los tres casos
+-- Funcion para resolver los tres casos
 resolver3_6 :: IO ()
 resolver3_6 = do
   putStrLn "\n[MOCHILA 0-1]"
@@ -205,7 +205,7 @@ solveSubsetSum :: SS -> IO (Maybe Model)
 solveSubsetSum ss@(xs, s) =
   solve ("QF_LIA", symbolsSS ss, map lpo2SMT (subsetSum ss))
 
--- Declaraciones de símbolos para subconjunto suma
+-- Declaraciones de simbolos para subconjunto suma
 symbolsSS :: SS -> [SymDecl]
 symbolsSS (xs, s) = genVars1 "Int" "x" [1..n] ++ mapConstDef "Int" consts
   where
