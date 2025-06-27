@@ -154,22 +154,22 @@ maxMochila0Inf = maxMochila0c . m0InfTom0c
 
 -- Lista de objetos (valor, peso)
 vs3_6 :: [Nat]
-vs3_6 = [12,8,15,22,13,24]
+vs3_6 = [12,8,2,15,5,22,9,13,7,24]
 
 ws3_6 :: [Nat]
-ws3_6 = [2,2,5,9,7,3]
+ws3_6 = [3,2,5,3,1,6,2,3,2,4]
 
 -- (a) Mochila 0-1
 ma :: KS1
-ma = (6, vs3_6, ws3_6, 15, 0)
+ma = (10, vs3_6, ws3_6, 15, 0)
 
 -- (b) Mochila 0-inf
 mb :: KSinf
-mb = (6, vs3_6, ws3_6, 15, 0)
+mb = (10, vs3_6, ws3_6, 15, 0)
 
 -- (c) Mochila 0-c con c = 2
 mc :: KSc
-mc = (6, vs3_6, ws3_6, 15, 2, 0)
+mc = (10, vs3_6, ws3_6, 15, 2, 0)
 
 -- Función para resolver los tres casos
 resolver3_6 :: IO ()
@@ -185,7 +185,7 @@ resolver3_6 = do
   putStrLn "\n[MOCHILA 0-C con c = 2]"
   res3 <- maxMochila0c mc
   print res3
-
+--La salida es una lista de pares tal que ("xn","cantidad"), la n es el objeto, es decir el primer objeto de la tabla dada mientras que la cantidad, bueno, es la cantidad de ese objeto
 
 -- 3.7. Formalización del problema del subconjunto suma
 type SS = ([Nat], Nat)
@@ -197,7 +197,7 @@ subsetSum (xs, s) =
   reglaA : [reglaB]
   where
     n = length xs
-    reglaA = bigAnd [1..n] (\i -> (v1 "x" i) `leq` One)  -- x_i ∈ {0,1}
+    reglaA = bigAnd [1..n] (\i -> (v1 "x" i) `leq` One) 
     reglaB = bigAdd [1..n] (\i -> show (xs !! (i-1)) `Mul` v1 "x" i) `Equ` C (show s)
 
 -- Resolver subconjunto suma
@@ -232,6 +232,9 @@ resolver3_8 = do
   putStrLn "\n[SUBSET SUM k = 95]"
   r2 <- solveSubsetSum ssk2
   print r2
+
+--La salida es similar a la de resolver3_6, es una lista de pares ("xn","cantidad") el n representa el numero en la posicion de la lista  listaSS, viendolo como un array tradicional
+--mientras que la cantidad es la cantidad de ese numero
 
 -- 3.9*. (Opcional)
 
